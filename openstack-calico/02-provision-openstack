@@ -1,0 +1,79 @@
+#!/bin/bash
+
+set -ex
+
+echo "This command is run to configure an Orange-Box Openstack deployment"
+
+obnum=`hostname | cut -c 10- -`
+
+PKGS=" python-keystone python-neutronclient python-novaclient python-glanceclient python-openstackclient"
+dpkg -l $PKGS > /dev/null || sudo apt-get install -y $PKGS
+
+keystone=$(juju status keystone | grep keystone/0 | awk '{print $5}' )
+
+echo "#!/bin/bash
+unset OS_PROJECT_ID
+unset OS_PROJECT_NAME
+unset OS_USER_DOMAIN_NAME
+unset OS_INTERFACE
+export OS_USER_DOMAIN_NAME=admin_domain
+export OS_PROJECT_DOMAIN_NAME=admin_domain
+export OS_USERNAME=admin
+export OS_TENANT_NAME=admin
+export OS_PASSWORD=admin
+export OS_REGION_NAME=RegionOne
+export OS_IDENTITY_API_VERSION=3
+export OS_ENDPOINT_TYPE=publicURL
+export OS_AUTH_URL=${OS_AUTH_PROTOCOL:-http}://`juju run --unit keystone/0 'unit-get private-address'`:5000/v3
+export OS_AUTH_TYPE=password
+
+" > nova.rc
+
+source nova.rc
+
+#Configure the default security group to allow ICMP and SSH
+openstack security group rule create --proto icmp default
+openstack security group rule create --proto tcp --dst-port 22 default
+openstack security group rule create --proto tcp --dst-port 80 default
+openstack security group rule create --proto tcp --dst-port 443 default
+openstack security group rule create --proto tcp --dst-port 3389 default
+
+#Upload a default SSH key
+openstack keypair create  --public-key ~/.ssh/id_rsa.pub default
+
+#Remove the m1.tiny as it is too small for Ubuntu.
+openstack flavor create m1.nano --id auto --ram 1024 --disk 10 --vcpus 1
+openstack flavor create m1.small --id auto --ram 4096 --disk 40 --vcpus 2
+openstack flavor create m1.medium --id auto --ram 8192 --disk 60 --vcpus 4
+openstack flavor create m1.large --id auto --ram 16384 --disk 80 --vcpus 8
+openstack flavor create m1.xlarge --id auto --ram 32768 --disk 100 --vcpus 16
+
+#Modify quotas for the tenant to allow large deployments
+# Below line complain multiple admin projects
+#openstack quota  set --ram 204800 --cores 200 --instances 100 admin
+
+neutron quota-update --security-group 100 --security-group-rule 500 
+#image upload
+glance image-create --name=cirros_0.4.0 --visibility=public --container-format=ovf --disk-format=qcow2 <  /srv/data/cirros-0.4.0-x86_64-disk.img
+glance image-create --name=ubuntu_16.04_kvm --visibility=public --container-format=ovf --disk-format=qcow2 <  /srv/data/xenial-server-cloudimg-amd64-disk1.img
+#glance image-create --name=ubuntu_16.04_lxc --visibility=public --container-format=ovf --disk-format=raw <  /srv/data/xenial-server-cloudimg-amd64-root.tar.xz
+#glance image-create --name=ubuntu_14.04_kvm --visibility=public --container-format=ovf --disk-format=qcow2 <  /srv/data/trusty-server-cloudimg-amd64-disk1.img
+#glance image-create --name=rancherOS --visibility=public --container-format=bare --disk-format=iso <  /srv/data/rancheros.iso
+#glance image-create --name=oai-lxc-image --visibility=public --container-format=ovf --disk-format=raw <  /srv/data/oai-lxc-image.tar.gz
+#glance image-create --name oai-kvm-image --visibility=public --container-format=bare --disk-format=qcow2 < /srv/data/oai-kvm-image.qcow2
+glance image-create --name speedtest-kvm --visibility=public --container-format=bare --disk-format=qcow2 < /srv/data/SpeedTest01312018.qcow2
+# Need to download CentOS qcow
+#glance image-create --name=centos7 --visibility=public --container-format=bare --disk-format=qcow2 <  /srv/data/CentOS-7.qcow2
+
+#for i in ` openstack hypervisor list -f value  -c "Hypervisor Hostname"` ; do echo -n $i, ; openstack hypervisor show $i -c hypervisor_type -f value ; done > hypervisor-hosts
+#LXD_HOST=`grep lxd hypervisor-hosts  | cut -d "," -f 1 `
+#KVM_HOST=`grep QEMU hypervisor-hosts  | cut -d "," -f 1 `
+#rm -rf hypervisor-hosts
+
+#openstack aggregate create az-kvm --zone az-kvm
+#openstack aggregate create az-lxd --zone az-lxd
+#openstack aggregate set az-lxd --property exclusive=true
+#for lxdnodes in ${LXD_HOST[@]} ; do openstack aggregate add host az-lxd ${lxdnodes:0:10} ; done
+#for kvmnodes in ${KVM_HOST[@]} ; do openstack aggregate add host az-kvm ${kvmnodes:0:10} ; done
+
+exit

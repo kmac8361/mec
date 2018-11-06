@@ -1,0 +1,17 @@
+#!/bin/bash
+unset OS_PROJECT_ID
+unset OS_PROJECT_NAME
+unset OS_USER_DOMAIN_NAME
+unset OS_INTERFACE
+export OS_USER_DOMAIN_NAME=default
+export OS_PROJECT_DOMAIN_NAME=default
+export OS_USERNAME=gnocchi
+export OS_TENANT_NAME=services
+export OS_PASSWORD=PHH36MJnZFSXmpm45YSZLhsjyhm6h8gfP9K6y4RfY6mGgHSZKRNhB4sJHpbtLyp4
+export OS_REGION_NAME=RegionOne
+export OS_IDENTITY_API_VERSION=3
+export OS_ENDPOINT_TYPE=publicURL
+export OS_AUTH_URL=http://172.27.160.178:5000/v3
+export OS_AUTH_TYPE=password
+
+

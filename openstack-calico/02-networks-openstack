@@ -1,0 +1,63 @@
+#!/bin/bash
+
+set -ex
+
+echo "This command is run to configure an Orange-Box Openstack deployment"
+
+obnum=`hostname | cut -c 10- -`
+
+keystone=$(juju status keystone | grep keystone/0 | awk '{print $5}' )
+
+NEUTRON_EXT_NET_DNS="172.27.$((obnum+3)).254"
+NEUTRON_EXT_NET_NAME="Provider-External"
+NEUTRON_EXT_SUBNET_NAME="Provider-External-Subnet"
+NEUTRON_EXT_NET_GW="172.27.$((obnum+3)).254"
+NEUTRON_EXT_NET_CIDR="172.27.$((obnum+2)).0/23"
+NEUTRON_EXT_NET_FLOAT_RANGE_START="172.27.$((obnum+3)).150"
+NEUTRON_EXT_NET_FLOAT_RANGE_END="172.27.$((obnum+3)).200"
+NEUTRON_EXT_NET_PHY_NET="physnet1"
+NEUTRON_EXT_NET_TYPE="flat"
+
+NEUTRON_TENANT_NET_CIDR="192.168.$((obnum)).0/24"
+NEUTRON_TENANT_NET_GW="192.168.$((obnum)).1"
+NEUTRON_TENANT_NET_NAME="Private_Network"
+NEUTRON_TENANT_SUBNET_NAME="Private_Subnet"
+
+echo "#!/bin/bash
+unset OS_PROJECT_ID
+unset OS_PROJECT_NAME
+unset OS_USER_DOMAIN_NAME
+unset OS_INTERFACE
+export OS_USER_DOMAIN_NAME=admin_domain
+export OS_PROJECT_DOMAIN_NAME=admin_domain
+export OS_USERNAME=admin
+export OS_TENANT_NAME=admin
+export OS_PASSWORD=admin
+export OS_REGION_NAME=RegionOne
+export OS_IDENTITY_API_VERSION=3
+export OS_ENDPOINT_TYPE=publicURL
+export OS_AUTH_URL=${OS_AUTH_PROTOCOL:-http}://`juju run --unit keystone/0 'unit-get private-address'`:5000/v3
+export OS_AUTH_TYPE=password
+
+" > nova.rc
+
+source nova.rc
+
+TENANT_ID=`openstack project show --domain admin_domain -f value -c id admin`
+
+echo "Admin Tenant Id: $TENANT_ID"
+
+# Tenant Network
+neutron net-create --shared $NEUTRON_TENANT_NET_NAME
+neutron subnet-create --enable-dhcp --ip-version 4 --name $NEUTRON_TENANT_SUBNET_NAME --gateway $NEUTRON_TENANT_NET_GW $NEUTRON_TENANT_NET_NAME $NEUTRON_TENANT_NET_CIDR
+
+#EXT NET
+neutron net-create --shared --router:external --provider:physical_network $NEUTRON_EXT_NET_PHY_NET --provider:network_type $NEUTRON_EXT_NET_TYPE $NEUTRON_EXT_NET_NAME
+neutron subnet-create --enable-dhcp --ip-version 4 --name $NEUTRON_EXT_SUBNET_NAME --gateway $NEUTRON_EXT_NET_GW --allocation-pool start=$NEUTRON_EXT_NET_FLOAT_RANGE_START,end=$NEUTRON_EXT_NET_FLOAT_RANGE_END --dns-nameserver $NEUTRON_EXT_NET_DNS    $NEUTRON_EXT_NET_NAME $NEUTRON_EXT_NET_CIDR
+
+#Provider Router
+neutron router-create --tenant-id $TENANT_ID external-router
+neutron router-gateway-set external-router $NEUTRON_EXT_NET_NAME
+neutron router-interface-add external-router $NEUTRON_TENANT_SUBNET_NAME 
+
+exit

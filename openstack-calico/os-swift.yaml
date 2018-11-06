@@ -1,0 +1,106 @@
+series: xenial
+services:
+  swift-storage-z1:
+    charm: cs:swift-storage
+    num_units: 3
+    constraints: mem=16G
+    options:
+      zone: 1
+      block-device: sdb
+      overwrite: "true"
+    to:
+      - "0"
+      - "1"
+      - "2"
+  swift-storage-z2:
+    charm: cs:swift-storage
+    num_units: 3
+    constraints: mem=16G
+    options:
+      zone: 2
+      block-device: sdb
+      overwrite: "true"
+    to:
+      - "3"
+      - "4"
+      - "5"
+  swift-storage-z3:
+    charm: cs:swift-storage
+    num_units: 3
+    constraints: mem=16G
+    options:
+      zone: 3
+      block-device: sdb
+      overwrite: "true"
+    to:
+      - "6"
+      - "7"
+      - "8"
+  swift-proxy:
+    charm: cs:swift-proxy
+    num_units: 3
+    constraints: mem=4G
+    options:
+      zone-assignment: manual
+      replicas: 3
+      partition-power: 8
+      workers: 2
+      swift-hash: fdfef9d4-8b06-11e2-8ac0-531c923c8fae
+    to:
+      - "9"
+      - "10"
+      - "11"
+  ntp:
+    charm: cs:ntp
+relations:
+  - - swift-proxy:swift-storage
+    - swift-storage-z1:swift-storage
+  - - swift-proxy:swift-storage
+    - swift-storage-z2:swift-storage
+  - - swift-proxy:swift-storage
+    - swift-storage-z3:swift-storage
+  - - ntp:juju-info
+    - swift-proxy:juju-info
+  - - ntp:juju-info
+    - swift-storage-z1:juju-info
+  - - ntp:juju-info
+    - swift-storage-z2:juju-info
+  - - ntp:juju-info
+    - swift-storage-z3:juju-info
+machines:
+  "0":
+    series: xenial
+    constraints: arch=amd64 tags=physical
+  "1":
+    series: xenial
+    constraints: arch=amd64 tags=physical
+  "2":
+    series: xenial
+    constraints: arch=amd64 tags=physical
+  "3":
+    series: xenial
+    constraints: arch=amd64 tags=physical
+  "4":
+    series: xenial
+    constraints: arch=amd64 tags=physical
+  "5":
+    series: xenial
+    constraints: arch=amd64 tags=physical
+  "6":
+    series: xenial
+    constraints: arch=amd64 tags=physical
+  "7":
+    series: xenial
+    constraints: arch=amd64 tags=physical
+  "8":
+    series: xenial
+    constraints: arch=amd64 tags=physical
+  "9":
+    series: xenial
+    constraints: arch=amd64 tags=kontron
+  "10":
+    series: xenial
+    constraints: arch=amd64 tags=kontron
+  "11":
+    series: xenial
+    constraints: arch=amd64 tags=kontron
