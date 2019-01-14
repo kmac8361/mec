@@ -3,10 +3,10 @@
 # Destroy Kubernetes
 #
 set -ex
-model=`juju list-models |awk '{print $1}'|grep k8s`
-if [[ ${model:0:3} == "k8s" ]]; then
-     echo "Model:k8s Found -> Destroy in Progress!"
-     juju destroy-model "k8s" -y
+model=`juju list-models |awk '{print $1}'|grep k8s-min`
+if [[ ${model:0:7} == "k8s-min" ]]; then
+     echo "Model:k8s-min Found -> Destroy in Progress!"
+     juju destroy-model "k8s-min" -y
 else
-     echo "Model:k8s NOT Found!"
+     echo "Model:k8s-min NOT Found!"
 fi

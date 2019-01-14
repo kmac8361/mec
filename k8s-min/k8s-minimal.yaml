@@ -4,7 +4,7 @@ services:
     annotations:
       gui-x: '450'
       gui-y: '550'
-    charm: cs:~containers/easyrsa-27
+    charm: cs:~containers/easyrsa-50
     num_units: 1
     to:
       - "0"
@@ -12,7 +12,9 @@ services:
     annotations:
       gui-x: '800'
       gui-y: '550'
-    charm: cs:~containers/etcd-63
+    charm: cs:~containers/etcd-96
+    options:
+      channel: 3.2/stable
     num_units: 1
     to:
       - "0"
@@ -20,12 +22,14 @@ services:
     annotations:
       gui-x: '450'
       gui-y: '750'
-    charm: cs:~containers/flannel-40
+    charm: cs:~containers/flannel-66
+    resources:
+      flannel-amd64: 3
   kubeapi-load-balancer:
     annotations:
       gui-x: '450'
       gui-y: '250'
-    charm: cs:~containers/kubeapi-load-balancer-43
+    charm: cs:~containers/kubeapi-load-balancer-69
     expose: true
     num_units: 1
     to:
@@ -34,10 +38,10 @@ services:
     annotations:
       gui-x: '800'
       gui-y: '850'
-    charm: cs:~containers/kubernetes-master-78
+    charm: cs:~containers/kubernetes-master-122
     num_units: 1
     options:
-      channel: 1.8/stable
+      channel: 1.11/stable
       allow-privileged: "true"
     to: 
       - "0"
@@ -45,32 +49,16 @@ services:
     annotations:
       gui-x: '100'
       gui-y: '850'
-    charm: cs:~containers/kubernetes-worker-81
+    charm: cs:~containers/kubernetes-worker-138
     constraints: cores=4 mem=4G
     expose: true
-    num_units: 3
+    num_units: 2
     options:
-      channel: 1.8/stable
-      labels: nodeType=gpu
-      allow-privileged: "true"
-    to:
-      - "2"
-      - "3"
-      - "4"
-  kubernetes-worker-storage:
-    annotations:
-      gui-x: '100'
-      gui-y: '850'
-    charm: cs:~containers/kubernetes-worker-69
-    constraints: cores=4 mem=4G
-    expose: true
-    num_units: 1
-    options:
-      channel: 1.8/stable
-      labels: nodeType=storage
+      channel: 1.11/stable
       allow-privileged: "true"
     to:
       - "1"
+      - "2"
 relations:
 - - kubernetes-master:kube-api-endpoint
   - kubeapi-load-balancer:apiserver
@@ -78,8 +66,6 @@ relations:
   - kubeapi-load-balancer:loadbalancer
 - - kubernetes-master:kube-control
   - kubernetes-worker:kube-control
-- - kubernetes-master:kube-control
-  - kubernetes-worker-storage:kube-control
 - - kubernetes-master:certificates
   - easyrsa:client
 - - etcd:certificates
@@ -88,11 +74,7 @@ relations:
   - etcd:db
 - - kubernetes-worker:certificates
   - easyrsa:client
-- - kubernetes-worker-storage:certificates
-  - easyrsa:client
 - - kubernetes-worker:kube-api-endpoint
-  - kubeapi-load-balancer:website
-- - kubernetes-worker-storage:kube-api-endpoint
   - kubeapi-load-balancer:website
 - - kubeapi-load-balancer:certificates
   - easyrsa:client
@@ -102,8 +84,6 @@ relations:
   - kubernetes-master:cni
 - - flannel:cni
   - kubernetes-worker:cni
-- - flannel:cni
-  - kubernetes-worker-storage:cni
 machines:
   "0":
     series: xenial
@@ -113,10 +93,4 @@ machines:
     constraints: arch=amd64 tags=physical
   "2":
     series: xenial
-    constraints: arch=amd64 tags=Dell
-  "3":
-    series: xenial
-    constraints: arch=amd64 tags=Dell
-  "4":
-    series: xenial
-    constraints: arch=amd64 tags=Dell
+    constraints: arch=amd64 tags=physical

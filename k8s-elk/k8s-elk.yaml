@@ -23,6 +23,8 @@ services:
       gui-x: '450'
       gui-y: '750'
     charm: cs:~containers/flannel-66
+    resources:
+      flannel-amd64: 3
   kubeapi-load-balancer:
     annotations:
       gui-x: '450'

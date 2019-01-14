@@ -95,7 +95,7 @@ applications:
       gui-y: '500'
     num_units: 0
   barbican-softhsm:
-    charm: 'cs:barbican-softhsm'
+    charm: 'cs:barbican-softhsm-4'
     annotations:
       gui-x: '600'
       gui-y: '300'
@@ -150,7 +150,7 @@ applications:
     to:
       - 'lxd:ceph-osd/1'
   barbican:
-    charm: 'cs:barbican'
+    charm: 'cs:barbican-5'
     num_units: 1
     annotations:
       gui-x: '900'

@@ -3,14 +3,14 @@
 # Kubernetes Deployment Kick-Starter
 #
 
-model=`juju list-models |awk '{print $1}'|grep k8s`
+model=`juju list-models |awk '{print $1}'|grep k8s-min`
 
-if [[ ${model:0:3} == "k8s" ]]; then
-	juju switch k8s
+if [[ ${model:0:7} == "k8s-min" ]]; then
+	juju switch k8s-min
      	juju deploy k8s-minimal.yaml
 else
-	juju add-model k8s
-	juju switch k8s
+	juju add-model k8s-min
+	juju switch k8s-min
      	juju deploy k8s-minimal.yaml
 fi
 
