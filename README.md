@@ -1,14 +1,14 @@
 # Prep-Step Before Deployment: MAAS & JUJU SETUP
 ```sh
-ubuntu@OrangeBox140:~/.local/share/juju$ cat clouds.yaml
+ubuntu@LLCServer140:~/.local/share/juju$ cat clouds.yaml
 clouds:
-  v4n140-maas:
+  llc140-maas:
     type: maas
     auth-types: [oauth1]
     endpoint: http://172.27.140.1/MAAS/
-ubuntu@OrangeBox140:~/.local/share/juju$ cat credentials.yaml 
+ubuntu@LLCServer140:~/.local/share/juju$ cat credentials.yaml 
 credentials:
-  v4n140-maas:
+  llc140-maas:
     maas:
       auth-type: oauth1
       maas-oauth: Wx6xE9que2UFq8xxRj:VC6CzEuzrjdj68xRQM:Rqt8kdAz2hr48WDyfNuU8UL584L6vXD4

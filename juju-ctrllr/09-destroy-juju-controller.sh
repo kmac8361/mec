@@ -5,4 +5,4 @@ set -eaux
 
 obnum=`hostname | cut -c 10- -`
 
-juju kill-controller maas-v4n$obnum-controller
+juju kill-controller maas-llc${obnum}-controller
